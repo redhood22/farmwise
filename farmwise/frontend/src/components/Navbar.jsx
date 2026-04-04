@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 const navLinks = [
   {
     label: 'Weather',
-    href: '#weather',
+    href: '/weather',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <path d="M3 15a7 7 0 1 1 14 0" stroke="currentColor" strokeWidth="2"/>
@@ -62,14 +63,14 @@ function Navbar() {
         {/* Desktop Nav — centered pill buttons */}
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map(({ label, href, icon }) => (
-            <a
+            <Link
               key={label}
-              href={href}
+              to={href}
               className="flex items-center gap-1.5 text-[#854F0B] hover:text-[#412402] hover:bg-[#FAC775]/30 text-xs font-medium px-4 py-2 rounded-full transition-all duration-200"
             >
               <span className="opacity-70">{icon}</span>
               {label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -96,15 +97,15 @@ function Navbar() {
       {menuOpen && (
         <div className="mt-2 bg-[#FAEEDA]/97 backdrop-blur-xl border border-[#FAC775]/60 rounded-3xl px-4 py-4 flex flex-col gap-1 md:hidden shadow-lg">
           {navLinks.map(({ label, href, icon }) => (
-            <a
+            <Link
               key={label}
-              href={href}
+              to={href}
               onClick={() => setMenuOpen(false)}
               className="flex items-center gap-3 text-sm text-[#854F0B] hover:text-[#412402] hover:bg-[#FAC775]/20 px-4 py-3 rounded-2xl transition-all duration-200"
             >
               <span className="opacity-60">{icon}</span>
               {label}
-            </a>
+            </Link>
           ))}
           <div className="mt-2 pt-3 border-t border-[#FAC775]/40">
             <button className="w-full bg-[#412402] text-[#FAEEDA] text-sm px-5 py-2.5 rounded-full">
