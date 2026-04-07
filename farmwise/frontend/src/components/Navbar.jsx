@@ -14,21 +14,21 @@ const navLinks = [
     ),
   },
   {
-    label: 'Crop Health',
-    href: '#crop-health',
+    label: 'How it works',
+    href: '/#how-it-works',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M12 22V12M12 12C12 7 7 4 2 5c0 5 3 9 10 7M12 12c0-5 5-8 10-7-1 5-4 9-10 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
   },
   {
-    label: 'Practices',
-    href: '#practices',
+    label: 'FAQ',
+    href: '/#faq',
     icon: (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <path d="M4 19V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12" stroke="currentColor" strokeWidth="2"/>
-        <path d="M4 19h16M8 11h8M8 15h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+        <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     ),
   },
@@ -75,7 +75,10 @@ function Navbar() {
         </div>
 
         {/* CTA */}
-        <button className="hidden md:block bg-[#412402] text-[#FAEEDA] text-xs font-medium px-5 py-2.5 rounded-full hover:bg-[#633806] active:scale-95 transition-all duration-200 shrink-0">
+        <button 
+          onClick={() => document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' })}
+          className="hidden md:block bg-[#412402] text-[#FAEEDA] text-xs font-semibold px-6 py-2.5 rounded-full hover:bg-[#633806] active:scale-95 transition-all duration-200 shrink-0"
+        >
           Get Started
         </button>
 
@@ -108,8 +111,11 @@ function Navbar() {
             </Link>
           ))}
           <div className="mt-2 pt-3 border-t border-[#FAC775]/40">
-            <button className="w-full bg-[#412402] text-[#FAEEDA] text-sm px-5 py-2.5 rounded-full">
-              Get Started
+            <button 
+              onClick={() => { setMenuOpen(false); document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' }); }}
+              className="w-full bg-[#412402] text-[#FAEEDA] text-sm font-semibold px-5 py-3 rounded-2xl"
+            >
+              Get Started Now
             </button>
           </div>
         </div>
