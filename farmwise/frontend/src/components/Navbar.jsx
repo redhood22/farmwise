@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const navLinks = [
   {
@@ -32,17 +32,38 @@ const navLinks = [
       </svg>
     ),
   },
+  {
+    label: 'Practices',
+    href: '/practices',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
 ]
 
 function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleGetStarted = () => {
+    if (location.pathname !== '/') {
+      navigate('/#quick-hub')
+    } else {
+      document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' })
+    }
+    setMenuOpen(false)
+  }
 
   return (
     <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-2xl">
@@ -76,7 +97,7 @@ function Navbar() {
 
         {/* CTA */}
         <button 
-          onClick={() => document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={handleGetStarted}
           className="hidden md:block bg-[#412402] text-[#FAEEDA] text-xs font-semibold px-6 py-2.5 rounded-full hover:bg-[#633806] active:scale-95 transition-all duration-200 shrink-0"
         >
           Get Started
@@ -112,7 +133,7 @@ function Navbar() {
           ))}
           <div className="mt-2 pt-3 border-t border-[#FAC775]/40">
             <button 
-              onClick={() => { setMenuOpen(false); document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' }); }}
+              onClick={handleGetStarted}
               className="w-full bg-[#412402] text-[#FAEEDA] text-sm font-semibold px-5 py-3 rounded-2xl"
             >
               Get Started Now

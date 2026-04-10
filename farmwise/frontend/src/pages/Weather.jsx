@@ -254,7 +254,7 @@ function Weather() {
                 <span className="text-2xl text-[#854F0B] mb-2">C</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: 'Feels like', value: `${Math.round(current.apparent_temperature)}°C` },
                   { label: 'Humidity', value: `${current.relative_humidity_2m}%` },

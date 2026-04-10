@@ -1,5 +1,36 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import axios from 'axios'
+
+const friendlyDescription = (code, isDay) => {
+  const descriptions = {
+    0: isDay ? 'Clear Sky' : 'Clear Night',
+    1: 'Mostly Clear',
+    2: 'Partly Cloudy',
+    3: 'Overcast',
+    45: 'Foggy',
+    48: 'Freezing Fog',
+    51: 'Light Drizzle',
+    53: 'Drizzle',
+    55: 'Heavy Drizzle',
+    61: 'Light Rain',
+    63: 'Moderate Rain',
+    65: 'Heavy Rain',
+    71: 'Light Snow',
+    73: 'Snowfall',
+    75: 'Heavy Snow',
+    77: 'Snow Grains',
+    80: 'Light Rain Showers',
+    81: 'Rain Showers',
+    82: 'Heavy Rain Showers',
+    85: 'Snow Showers',
+    86: 'Heavy Snow Showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm with Hail',
+    99: 'Thunderstorm with Heavy Hail',
+  }
+  return descriptions[code] || 'Unknown'
+}
 
 const CROPS = [
   { id: "maize",     label: "Maize",     emoji: "🌽" },
@@ -69,38 +100,70 @@ export default function QuickActionHub() {
 
   // 2. Weather Advisory with Geolocation
   useEffect(() => {
-    if (activeTab === 'weather') {
-       if (!weatherData) {
-         // Attempt to get user location
-         if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                // In a real app, you'd call a reverse-geocoding API here.
-                // For now, we simulate "Your Area" if location is granted.
-                setWeatherData({
-                  city: "Your Location",
-                  temp: 34,
-                  condition: "Slightly Cloudy",
-                  tip: "Your local conditions are great for planting. Maintain steady irrigation."
+    if (activeTab === 'weather' && !weatherData) {
+      setLoading(true);
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+              // Get City Name
+              const geoRes = await axios.get(
+                `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+                { headers: { 'Accept-Language': 'en' } }
+              );
+              const city = geoRes.data.address?.city || geoRes.data.address?.town || geoRes.data.address?.village || 'Your Location';
+              
+              // Get Weather
+              const weatherRes = await axios.get(
+                `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,is_day,relative_humidity_2m,wind_speed_10m&timezone=auto`
+              );
+              
+              const current = weatherRes.data.current;
+              
+              // Get AI tip
+              let tip = "Maintain steady irrigation for your crops.";
+              try {
+                const tipRes = await axios.post('http://localhost:5000/api/farming-tip', {
+                  description: friendlyDescription(current.weather_code, current.is_day),
+                  temp: Math.round(current.temperature_2m),
+                  humidity: current.relative_humidity_2m,
+                  wind: Math.round(current.wind_speed_10m),
+                  city: city,
                 });
-              },
-              () => {
-                // Fallback to Kano if permission denied
-                setWeatherData({
-                   city: "Kano",
-                   temp: 32,
-                   condition: "Sunny",
-                   tip: "It's quite hot in your region today. Ensure your crops have enough water in the early morning."
-                });
-              }
-            );
-         } else {
-            // Fallback for non-supporting browsers
-            setWeatherData({ city: "Kano", temp: 32, condition: "Sunny", tip: "Ensure your crops have enough water." });
-         }
-       }
+                tip = tipRes.data.tip;
+              } catch (e) { console.error("Tip error", e); }
+
+              setWeatherData({
+                city: city,
+                temp: Math.round(current.temperature_2m),
+                condition: friendlyDescription(current.weather_code, current.is_day),
+                humidity: current.relative_humidity_2m,
+                wind: Math.round(current.wind_speed_10m),
+                tip: tip
+              });
+            } catch (err) {
+              console.error(err);
+              // Fallback
+              setWeatherData({ city: "Kano", temp: 32, condition: "Sunny", tip: "Ensure your crops have enough water.", humidity: 40, wind: 10 });
+            } finally {
+              setLoading(false);
+            }
+          },
+          () => {
+            // Fallback to Kano if permission denied
+            setWeatherData({ city: "Kano", temp: 32, condition: "Sunny", tip: "Ensure your crops have enough water.", humidity: 40, wind: 10 });
+            setLoading(false);
+          }
+        );
+      } else {
+        setWeatherData({ city: "Kano", temp: 32, condition: "Sunny", tip: "Ensure your crops have enough water.", humidity: 40, wind: 10 });
+        setLoading(false);
+      }
     }
   }, [activeTab, weatherData]);
+
+  const loadingWeather = activeTab === 'weather' && !weatherData && loading;
 
   return (
     <div id="quick-hub" className="w-full max-w-xl mx-auto bg-white/60 backdrop-blur-3xl border border-white/80 rounded-[2.5rem] p-5 shadow-2xl shadow-[#BA7517]/5 relative overflow-hidden transition-all duration-500 hover:shadow-BA7517/10">
@@ -231,7 +294,7 @@ export default function QuickActionHub() {
                       </svg>
                     </div>
                     <div>
-                      <div className="text-base font-bold text-[#412402]">{weatherData.city}, Nigeria</div>
+                      <div className="text-base font-bold text-[#412402]">{weatherData.city}</div>
                       <div className="text-[10px] font-bold text-[#BA7517] uppercase tracking-wider">Today's Forecast</div>
                     </div>
                   </div>
@@ -242,15 +305,15 @@ export default function QuickActionHub() {
                     {weatherData.temp}°
                   </div>
                   <div className="text-right space-y-1">
-                    <div className="text-[13px] text-[#854F0B]">Humidity: <span className="font-bold text-[#412402]">42%</span></div>
-                    <div className="text-[13px] text-[#854F0B]">Wind: <span className="font-bold text-[#412402]">12 km/h</span></div>
+                    <div className="text-[13px] text-[#854F0B]">Humidity: <span className="font-bold text-[#412402]">{weatherData.humidity}%</span></div>
+                    <div className="text-[13px] text-[#854F0B]">Wind: <span className="font-bold text-[#412402]">{weatherData.wind} km/h</span></div>
                     <div className="text-[13px] font-bold text-[#BA7517]">{weatherData.condition}</div>
                   </div>
                </div>
 
                <div className="flex gap-2">
-                  <span className="bg-[#FAEEDA] text-[#633806] text-[10px] font-bold px-4 py-1.5 rounded-full border border-[#FAC775]/30 shadow-sm">Good planting day</span>
-                  <span className="bg-[#FAEEDA] text-[#633806] text-[10px] font-bold px-4 py-1.5 rounded-full border border-[#FAC775]/30 shadow-sm">Low rain risk</span>
+                  <span className="bg-[#FAEEDA] text-[#633806] text-[10px] font-bold px-4 py-1.5 rounded-full border border-[#FAC775]/30 shadow-sm">Real-time data</span>
+                  <span className="bg-[#FAEEDA] text-[#633806] text-[10px] font-bold px-4 py-1.5 rounded-full border border-[#FAC775]/30 shadow-sm">Farm Advisory</span>
                </div>
             </div>
 

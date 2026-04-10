@@ -2,8 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 import requests as http_requests
 import base64
 import re
@@ -16,53 +15,10 @@ app = Flask(__name__)
 CORS(app)
 
 # --- Clients ---
-gemini_client = genai.Client(api_key=os.getenv('GEMINI_KEY'))
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-GROQ_BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
+groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
 
 
-def groq_text(prompt: str, model: str = "llama-3.3-70b-versatile") -> str:
-    """Call Groq text endpoint directly via HTTP (no SDK needed)."""
-    resp = http_requests.post(
-        GROQ_BASE_URL,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": model,
-            "messages": [{"role": "user", "content": prompt}]
-        },
-        timeout=30
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
 
-
-def groq_vision(prompt: str, data_url: str, model: str = "meta-llama/llama-4-scout-17b-16e-instruct") -> str:
-    """Call Groq vision endpoint directly via HTTP (no SDK needed)."""
-    resp = http_requests.post(
-        GROQ_BASE_URL,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": data_url}},
-                        {"type": "text", "text": prompt}
-                    ]
-                }
-            ]
-        },
-        timeout=60
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
 
 
 # ─────────────────────────────────────────────
@@ -81,19 +37,13 @@ Humidity: {data.get('humidity')}%
 Wind speed: {data.get('wind')} km/h
 Location: {data.get('city')}"""
 
-        # --- Try Gemini first ---
-        try:
-            response = gemini_client.models.generate_content(
-                model='gemini-2.0-flash-lite',
-                contents=prompt
-            )
-            tip = response.text
-            print("[farming-tip] Using Gemini")
-
-        except Exception as gemini_err:
-            print(f"[farming-tip] Gemini failed ({gemini_err}), falling back to Groq...")
-            tip = groq_text(prompt)
-            print("[farming-tip] Using Groq fallback")
+        # --- Using Groq ---
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        tip = response.choices[0].message.content.strip()
+        print("[farming-tip] Using Groq")
 
         return jsonify({"tip": tip}), 200
 
@@ -151,24 +101,23 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
         raw = None
 
-        # --- Try Gemini first ---
-        try:
-            response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash-lite",
-                contents=[
-                    types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                    types.Part.from_text(text=prompt),
-                ]
-            )
-            raw = response.text.strip()
-            print("[detect-disease] Using Gemini")
+        # --- Using Groq Vision ---
+        b64_str = base64.b64encode(image_bytes).decode("utf-8")
+        data_url = f"data:{mime_type};base64,{b64_str}"
 
-        except Exception as gemini_err:
-            print(f"[detect-disease] Gemini failed ({gemini_err}), falling back to Groq...")
-            b64_str = base64.b64encode(image_bytes).decode("utf-8")
-            data_url = f"data:{mime_type};base64,{b64_str}"
-            raw = groq_vision(prompt, data_url).strip()
-            print("[detect-disease] Using Groq fallback")
+        response = groq_client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}}
+                ]
+            }],
+            max_tokens=1000
+        )
+        raw = response.choices[0].message.content.strip()
+        print("[detect-disease] Using Groq Llama-4-scout")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
@@ -179,6 +128,48 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
     except Exception as e:
         print(f"Disease detection error: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────
+# FARMING ADVICE (Practices page chat)
+# ─────────────────────────────────────────────
+@app.route("/api/farming-advice", methods=["POST"])
+def farming_advice():
+    try:
+        data     = request.get_json()
+        crop     = data.get("crop", "maize")
+        question = data.get("question", "")
+
+        if not question:
+            return jsonify({"error": "No question provided"}), 400
+
+        prompt = f"""You are FarmWise, an expert agricultural advisor specializing in smallholder farming in West Africa, particularly Nigeria.
+
+A farmer is asking about {crop} farming. Answer their question in plain, practical language a small-scale farmer can act on immediately.
+
+Rules:
+- Keep the answer concise (3–6 sentences max)
+- Be specific and actionable — no vague advice
+- Use local context where relevant (Nigerian climate, common inputs available in local markets)
+- If the question is unrelated to farming or agriculture, politely redirect
+
+Farmer's question: {question}"""
+
+        # --- Using Groq ---
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+        )
+
+        answer = response.choices[0].message.content.strip()
+        print(f"[farming-advice] Advice generated for {crop}")
+        return jsonify({"answer": answer})
+
+    except Exception as e:
+        print(f"Farming advice error: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 

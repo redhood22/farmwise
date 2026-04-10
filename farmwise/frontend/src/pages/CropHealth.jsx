@@ -17,7 +17,7 @@ const URGENCY_STYLES = {
 
 const HOVER_STYLE = `
   .farm-btn {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !0important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   .farm-btn:hover {
     transform: translateY(-2px);
@@ -33,6 +33,14 @@ const HOVER_STYLE = `
   }
   .crop-tag-active:hover {
     background: #855310 !important;
+  }
+  @media (max-width: 640px) {
+    .mobile-px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+    .mobile-pt-8 { padding-top: 32px !important; }
+    .mobile-text-3xl { font-size: 24px !important; }
+    .mobile-stack { flex-direction: column !important; align-items: stretch !important; }
+    .mobile-full { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+    .mobile-grid-1 { grid-template-columns: 1fr !important; }
   }
 `;
 
@@ -140,6 +148,10 @@ export default function CropHealth() {
       // AUTO-SHOW RESULT: If result was already calculated on the homepage
       if (location.state.result) {
         setResult(location.state.result);
+        // Smooth scroll to results on mobile
+        setTimeout(() => {
+          document.getElementById('diagnosis-results')?.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
       }
       return;
     }
@@ -248,7 +260,7 @@ export default function CropHealth() {
   return (
     <div style={{ minHeight: "100vh", background: "#FFFBF5", fontFamily: "'Inter', 'Geist', sans-serif" }}>
       <style>{HOVER_STYLE}</style>
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 0" }}>
+      <div className="mobile-pt-8 mobile-px-4" style={{ maxWidth: 760, margin: "0 auto", padding: "48px 24px 0" }}>
         {/* Back link */}
         <Link to="/" style={{
           display: "inline-flex", alignItems: "center", gap: 6,
@@ -260,10 +272,10 @@ export default function CropHealth() {
           Back to home
         </Link>
 
-        <h1 style={{ fontSize: 32, fontWeight: 600, color: "#412402", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
+        <h1 className="mobile-text-3xl" style={{ fontSize: 32, fontWeight: 600, color: "#412402", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
           Crop Disease Detection
         </h1>
-        <p style={{ color: "#854F0B", margin: "0 0 44px", fontSize: 15 }}>
+        <p style={{ color: "#854F0B", margin: "0 0 44px", fontSize: 15, lineHeight: 1.5 }}>
           Upload or snap a photo of your crop leaf for an instant AI diagnosis
         </p>
 
@@ -366,7 +378,7 @@ export default function CropHealth() {
                     border: "1px solid #E8D5B0", background: "#000",
                   }} />
                   <canvas ref={canvasRef} style={{ display: "none" }} />
-                  <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16 }}>
+                  <div className="mobile-stack" style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16 }}>
                     <ActionBtn onClick={capturePhoto} primary>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ marginRight: 6 }}>
                         <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
@@ -483,7 +495,7 @@ export default function CropHealth() {
 
         {/* ── Results ───────────────────────────────────────────────── */}
         {result && (
-          <div style={{ marginBottom: 64 }}>
+          <div id="diagnosis-results" style={{ marginBottom: 64 }}>
             <Section label="03" title="Diagnosis Results">
 
               {/* Mismatch Warning */}

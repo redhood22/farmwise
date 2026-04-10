@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import QuickActionHub from '../components/QuickActionHub'
-import { useEffect } from 'react'
 
 const features = [
   {
@@ -75,16 +74,18 @@ export default function Home() {
   const [openFaqId, setOpenFaqId] = useState(null)
   const navigate = useNavigate()
 
+  const location = useLocation()
+  
   // Helper for smooth scrolling across routes or when hash is in URL
   useEffect(() => {
-    const hash = window.location.hash;
+    const hash = window.location.hash || location.hash;
     if (hash) {
       const element = document.querySelector(hash);
       if (element) {
         setTimeout(() => element.scrollIntoView({ behavior: 'smooth' }), 100);
       }
     }
-  }, []);
+  }, [location, location.hash]);
 
   const scrollToHub = () => {
     document.getElementById('quick-hub')?.scrollIntoView({ behavior: 'smooth' });
@@ -95,16 +96,16 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[95vh] flex flex-col items-center pt-40 pb-16 px-6 overflow-hidden">
+      <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-36 md:pt-44 pb-16 px-6 overflow-hidden">
         
         {/* Background Accents */}
         <div className="absolute top-[-10%] right-[-5%] w-[45%] h-[45%] bg-gradient-to-br from-[#FAC775]/20 to-transparent rounded-full blur-[120px]" />
         <div className="absolute bottom-40 left-[-5%] w-[35%] h-[35%] bg-gradient-to-tr from-[#BA7517]/10 to-transparent rounded-full blur-[100px]" />
 
         {/* Brand Badge */}
-        <div className="relative z-10 inline-flex items-center gap-2 bg-white/40 border border-[#FAC775]/40 rounded-full px-4 py-1.5 mb-10 shadow-sm backdrop-blur-sm">
+        <div className="relative z-10 inline-flex items-center gap-2 bg-white/40 border border-[#FAC775]/40 rounded-full px-4 py-1.5 mb-4 shadow-sm backdrop-blur-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-[#BA7517]" />
-          <span className="text-[10px] md:text-xs text-[#633806] font-bold uppercase tracking-wider">Smart farming for every farmer, everywhere</span>
+          <span className="text-[9px] md:text-[10px] text-[#633806] font-bold uppercase tracking-wider">Smart farming for every farmer, everywhere</span>
         </div>
 
         {/* Catchy Headline - RESTORED SIZE */}
