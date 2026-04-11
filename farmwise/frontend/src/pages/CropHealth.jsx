@@ -224,7 +224,7 @@ export default function CropHealth() {
     if (!imageBase64) return;
     setLoading(true); setError(null); setResult(null);
     try {
-      const res = await fetch("http://localhost:5000/api/detect-disease", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/detect-disease`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: imageBase64, crop: selectedCrop }),

@@ -105,7 +105,7 @@ function Weather() {
       // Get AI tip
       setTipLoading(true)
       try {
-        const tipRes = await axios.post('http://localhost:5000/api/farming-tip', {
+        const tipRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/farming-tip`, {
           description: friendlyDescription(data.current.weather_code, data.current.is_day),
           temp: Math.round(data.current.temperature_2m),
           feelsLike: Math.round(data.current.apparent_temperature),
