@@ -12,7 +12,20 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://farmwisee.vercel.app"])
+CORS(app, 
+     origins=["https://farmwisee.vercel.app", "https://farmwisee.vercel.app/"],
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type"],
+     supports_credentials=False)
+
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = app.make_response("")
+        response.headers["Access-Control-Allow-Origin"] = "https://farmwisee.vercel.app"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return response
 
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
