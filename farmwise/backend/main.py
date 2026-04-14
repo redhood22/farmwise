@@ -12,7 +12,7 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://farmwise.vercel.app"])
+CORS(app, origins=["https://farmwisee.vercel.app"])
 
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
