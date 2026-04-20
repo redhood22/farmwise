@@ -66,7 +66,7 @@ export default function QuickActionHub() {
   const runAnalysis = async () => {
     setLoading(true);
     try {
-      const res = await fetch("https://farmwise-production.up.railway.app/api/detect-disease", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/detect-disease`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: imagePreview, crop: selectedCrop }),
@@ -124,7 +124,7 @@ export default function QuickActionHub() {
               // Get AI tip
               let tip = "Maintain steady irrigation for your crops.";
               try {
-                const tipRes = await axios.post('https://farmwise-production.up.railway.app/api/farming-tip', {
+                const tipRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/farming-tip`, {
                   description: friendlyDescription(current.weather_code, current.is_day),
                   temp: Math.round(current.temperature_2m),
                   humidity: current.relative_humidity_2m,

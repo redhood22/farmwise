@@ -18,7 +18,7 @@ const features = [
     description: 'Hyperlocal daily and weekly forecasts tailored to your farm location anywhere in the world.',
   },
   {
-    id: 'crop-health',
+    id: 'crop-health', 
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path d="M12 22V12M12 12C12 7 7 4 2 5c0 5 3 9 10 7M12 12c0-5 5-8 10-7-1 5-4 9-10 7" stroke="#3B6D11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
