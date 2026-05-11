@@ -117,7 +117,11 @@ function Weather() {
           setAiTips(tipRes.data.tips)
         }
       } catch {
-        setAiTips(['Check local conditions before major farming activities today.'])
+        setAiTips([
+          'Check your soil moisture before watering today.',
+          'Avoid spraying pesticides if rain is coming.',
+          'Make sure your drainage channels are clear.',
+        ])
       } finally {
         setTipLoading(false)
       }
