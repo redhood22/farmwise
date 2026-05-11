@@ -84,14 +84,14 @@ function Weather() {
   const [forecast, setForecast] = useState([])
   const [locationName, setLocationName] = useState('')
   const [loading, setLoading] = useState(true)
-  const [aiTip, setAiTip] = useState('')
+  const [aiTips, setAiTips] = useState([])
   const [tipLoading, setTipLoading] = useState(false)
   const [error, setError] = useState('')
 
   const fetchWeather = async (lat, lon, displayName) => {
     setLoading(true)
     setError('')
-    setAiTip('')
+    setAiTips([])
     try {
       const weatherRes = await axios.get(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`
@@ -102,7 +102,7 @@ function Weather() {
       setForecast(data.daily)
       setLocationName(displayName)
 
-      // Get AI tip
+      // Get AI tips (array format)
       setTipLoading(true)
       try {
         const tipRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/farming-tip`, {
@@ -113,9 +113,11 @@ function Weather() {
           wind: Math.round(data.current.wind_speed_10m),
           city: displayName,
         })
-        setAiTip(tipRes.data.tip)
+        if (tipRes.data.tips && Array.isArray(tipRes.data.tips)) {
+          setAiTips(tipRes.data.tips)
+        }
       } catch {
-        setAiTip('Check local conditions before major farming activities today.')
+        setAiTips(['Check local conditions before major farming activities today.'])
       } finally {
         setTipLoading(false)
       }
@@ -279,14 +281,25 @@ function Weather() {
                 </svg>
               </div>
               <div className="flex-1">
-                <p className="text-xs font-medium uppercase tracking-widest mb-1 text-[#BA7517]">AI Farming Tip</p>
+                <p className="text-xs font-medium uppercase tracking-widest mb-3 text-[#BA7517]">AI Farming Tips</p>
                 {tipLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-[#FAC775] border-t-[#BA7517] rounded-full animate-spin"/>
-                    <p className="text-sm text-[#854F0B]">Getting personalised tip...</p>
+                    <p className="text-sm text-[#854F0B]">Getting personalised tips...</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-[#633806] leading-relaxed">{aiTip}</p>
+                  <ul className="space-y-2 pl-0 list-none">
+                    {aiTips && Array.isArray(aiTips) && aiTips.length > 0 ? (
+                      aiTips.map((tip, idx) => (
+                        <li key={idx} className="flex gap-2 items-start text-sm text-[#633806] leading-relaxed">
+                          <span className="text-[#BA7517] font-bold text-lg mt-[-6px]">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="text-sm text-[#633806]">Check local conditions before major farming activities.</li>
+                    )}
+                  </ul>
                 )}
               </div>
             </div>
