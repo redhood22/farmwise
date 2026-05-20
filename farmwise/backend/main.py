@@ -145,15 +145,19 @@ def farming_advice():
         if not question:
             return jsonify({"error": "No question provided"}), 400
 
-        prompt = f"""You are FarmWise, an expert agricultural advisor specializing in smallholder farming in West Africa, particularly Nigeria.
+        prompt = f"""You are FarmWise, a friendly farming advisor helping small-scale farmers in Nigeria.
 
-A farmer is asking about {crop} farming. Answer their question in plain, practical language a small-scale farmer can act on immediately.
+A farmer is asking about {crop} farming. Answer in plain, simple language — like you are talking to someone in the field, not a scientist. Be direct and practical.
 
 Rules:
-- Keep the answer concise (3–6 sentences max)
-- Be specific and actionable — no vague advice
-- Use local context where relevant (Nigerian climate, common inputs available in local markets)
-- If the question is unrelated to farming or agriculture, politely redirect
+- Return ONLY a JSON array of 3-5 short bullet points. No intro, no sign-off, no markdown.
+- Each bullet is one clear, actionable sentence a farmer can act on immediately
+- Use simple words anyone can understand
+- Give advice that works with what farmers can find in local Nigerian markets
+- If the question has nothing to do with farming, return: ["Sorry, I can only help with farming questions!"]
+
+Example format:
+["Use NPK 15-15-15 at planting time.", "Add urea when plants are knee-high.", "Avoid over-watering after flowering."]
 
 Farmer's question: {question}"""
 
@@ -164,9 +168,12 @@ Farmer's question: {question}"""
             max_tokens=300,
         )
 
-        answer = response.choices[0].message.content.strip()
+        raw = response.choices[0].message.content.strip()
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+        bullets = json.loads(raw)
         print(f"[farming-advice] Advice generated for {crop}")
-        return jsonify({"answer": answer})
+        return jsonify({"bullets": bullets})
 
     except Exception as e:
         print(f"Farming advice error: {e}")

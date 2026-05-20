@@ -267,7 +267,7 @@ export default function Practices() {
         body: JSON.stringify({ crop: activeCrop.label, question: text }),
       });
       const data = await res.json();
-      setMessages((m) => [...m, { role: "assistant", content: data.answer || data.error }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.bullets || [data.error] }]);
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Sorry, couldn't reach the server. Please check your connection." }]);
     } finally {
@@ -600,7 +600,18 @@ export default function Practices() {
                   color:      m.role === "user" ? "#FFFBF5" : "#412402",
                   fontSize: 14, lineHeight: 1.65,
                 }}>
-                  {m.content}
+                  {m.role === "assistant" && Array.isArray(m.content) ? (
+                    <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+                      {m.content.map((point, j) => (
+                        <li key={j} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                          <span style={{ marginTop: 4, width: 6, height: 6, borderRadius: "50%", background: "#BA7517", flexShrink: 0 }} />
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
