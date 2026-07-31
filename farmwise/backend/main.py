@@ -106,7 +106,7 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
         data_url = f"data:{mime_type};base64,{b64_str}"
 
         response = groq_client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="meta-llama/llama-4-maverick-17b-128e-instruct",
             messages=[{
                 "role": "user",
                 "content": [
@@ -117,7 +117,7 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
             max_tokens=1000
         )
         raw = response.choices[0].message.content.strip()
-        print("[detect-disease] Using Groq Llama-4-scout")
+        print("[detect-disease] Using Groq Llama-4-maverick")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
