@@ -3,7 +3,8 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from groq import Groq
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import requests as http_requests
 import base64
 import re
@@ -17,7 +18,7 @@ CORS(app, origins=["https://farmwisee.vercel.app"])
 
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
-genai.configure(api_key=os.getenv("GEMINI_KEY"))
+client_gemini = genai.Client(api_key=os.getenv("GEMINI_KEY"))
 
 
 
@@ -103,10 +104,14 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
         raw = None
 
-        # --- Using Groq Vision ---
-        gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-        image_part = {"mime_type": mime_type, "data": image_bytes}
-        response = gemini_model.generate_content([prompt, image_part])
+        # --- Using Gemini ---
+        response = client_gemini.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                prompt
+            ]
+        )
         raw = response.text.strip()
         print("[detect-disease] Using Gemini Flash")
 
