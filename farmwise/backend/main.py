@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from groq import Groq
+import google.generativeai as genai
 import requests as http_requests
 import base64
 import re
@@ -16,6 +17,7 @@ CORS(app, origins=["https://farmwisee.vercel.app"])
 
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_KEY"))
 
 
 
@@ -102,22 +104,11 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
         raw = None
 
         # --- Using Groq Vision ---
-        b64_str = base64.b64encode(image_bytes).decode("utf-8")
-        data_url = f"data:{mime_type};base64,{b64_str}"
-
-        response = groq_client.chat.completions.create(
-            model="meta-llama/llama-4-maverick-17b-128e-instruct",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": data_url}}
-                ]
-            }],
-            max_tokens=1000
-        )
-        raw = response.choices[0].message.content.strip()
-        print("[detect-disease] Using Groq Llama-4-maverick")
+        gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+        image_part = {"mime_type": mime_type, "data": image_bytes}
+        response = gemini_model.generate_content([prompt, image_part])
+        raw = response.text.strip()
+        print("[detect-disease] Using Gemini Flash")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
