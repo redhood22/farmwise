@@ -110,18 +110,24 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
         data_url = f"data:{mime_type};base64,{b64_str}"
 
         response = nvidia_client.chat.completions.create(
-            model="minimaxai/minimax-m3",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": data_url}}
-                ]
-            }],
+            model="nvidia/nemotron-nano-12b-v2-vl",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "/think"
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": data_url}}
+                    ]
+                }
+            ],
             max_tokens=1000
         )
         raw = response.choices[0].message.content.strip()
-        print("[detect-disease] Using NVIDIA NIM MiniMax M3")
+        print("[detect-disease] Using NVIDIA NIM Nemotron Nano 12B VL")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
