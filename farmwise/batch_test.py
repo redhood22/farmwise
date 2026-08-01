@@ -63,7 +63,7 @@ def call_detect(image_b64: str, crop: str) -> dict:
     resp = requests.post(
         f"{BACKEND_URL}/api/detect-disease",
         json=payload,
-        timeout=60
+        timeout=120
     )
     resp.raise_for_status()
     return resp.json()
