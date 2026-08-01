@@ -106,7 +106,7 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
         # --- Using Gemini ---
         response = client_gemini.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-2.5-flash",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 prompt
