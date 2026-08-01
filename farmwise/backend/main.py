@@ -3,9 +3,7 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from groq import Groq
-from google import genai
-from google.genai import types
-import requests as http_requests
+from openai import OpenAI
 import base64
 import re
 import traceback
@@ -18,7 +16,11 @@ CORS(app, origins=["https://farmwisee.vercel.app"])
 
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
-client_gemini = genai.Client(api_key=os.getenv("GEMINI_KEY"))
+
+nvidia_client = OpenAI(
+    api_key=os.getenv("NVIDIA_KEY"),
+    base_url="https://integrate.api.nvidia.com/v1"
+)
 
 
 
@@ -104,16 +106,22 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
         raw = None
 
-        # --- Using Gemini ---
-        response = client_gemini.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                prompt
-            ]
+        b64_str = base64.b64encode(image_bytes).decode("utf-8")
+        data_url = f"data:{mime_type};base64,{b64_str}"
+
+        response = nvidia_client.chat.completions.create(
+            model="minimaxai/minimax-m3",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}}
+                ]
+            }],
+            max_tokens=1000
         )
-        raw = response.text.strip()
-        print("[detect-disease] Using Gemini Flash")
+        raw = response.choices[0].message.content.strip()
+        print("[detect-disease] Using NVIDIA NIM MiniMax M3")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
