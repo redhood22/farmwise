@@ -118,14 +118,14 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
         raw = None
 
         response = client_gemini.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.6-flash",
             contents=[
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
                 prompt
             ]
         )
         raw = response.text.strip()
-        print("[detect-disease] Using Gemini 2.5 Flash")
+        print("[detect-disease] Using Gemini 3.6 Flash")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
