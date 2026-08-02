@@ -5,6 +5,17 @@ import QuickActionHub from '../components/QuickActionHub'
 
 const features = [
   {
+    id: 'crop-health', 
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 22V12M12 12C12 7 7 4 2 5c0 5 3 9 10 7M12 12c0-5 5-8 10-7-1 5-4 9-10 7" stroke="#3B6D11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+    iconBg: 'bg-[#EAF3DE]',
+    title: 'Disease Detection',
+    description: 'Snap a photo of your crop and get an instant AI-powered diagnosis with treatment advice.',
+  },
+  {
     id: 'weather',
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -16,17 +27,6 @@ const features = [
     iconBg: 'bg-[#FAEEDA]',
     title: 'Weather Forecast',
     description: 'Hyperlocal daily and weekly forecasts tailored to your farm location anywhere in the world.',
-  },
-  {
-    id: 'crop-health', 
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path d="M12 22V12M12 12C12 7 7 4 2 5c0 5 3 9 10 7M12 12c0-5 5-8 10-7-1 5-4 9-10 7" stroke="#3B6D11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    iconBg: 'bg-[#EAF3DE]',
-    title: 'Disease Detection',
-    description: 'Snap a photo of your crop and get an instant AI-powered diagnosis with treatment advice.',
   },
   {
     id: 'practices',
@@ -96,7 +96,7 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-36 md:pt-44 pb-16 px-6 overflow-hidden">
+      <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 md:pt-28 pb-16 px-6 overflow-hidden">
         
         {/* Background Accents */}
         <div className="absolute top-[-10%] right-[-5%] w-[45%] h-[45%] bg-gradient-to-br from-[#FAC775]/20 to-transparent rounded-full blur-[120px]" />
