@@ -1,36 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-
-const friendlyDescription = (code, isDay) => {
-  const descriptions = {
-    0: isDay ? 'Clear Sky' : 'Clear Night',
-    1: 'Mostly Clear',
-    2: 'Partly Cloudy',
-    3: 'Overcast',
-    45: 'Foggy',
-    48: 'Freezing Fog',
-    51: 'Light Drizzle',
-    53: 'Drizzle',
-    55: 'Heavy Drizzle',
-    61: 'Light Rain',
-    63: 'Moderate Rain',
-    65: 'Heavy Rain',
-    71: 'Light Snow',
-    73: 'Snowfall',
-    75: 'Heavy Snow',
-    77: 'Snow Grains',
-    80: 'Light Rain Showers',
-    81: 'Rain Showers',
-    82: 'Heavy Rain Showers',
-    85: 'Snow Showers',
-    86: 'Heavy Snow Showers',
-    95: 'Thunderstorm',
-    96: 'Thunderstorm with Hail',
-    99: 'Thunderstorm with Heavy Hail',
-  }
-  return descriptions[code] || 'Unknown'
-}
+import { getCachedWeather, fetchWeatherBundle, friendlyDescription } from '../utils/weatherApi'
 
 const getWeatherCategory = (code) => {
   if (code === 0 || code === 1) return 'clear'
@@ -85,47 +56,20 @@ function Weather() {
   const [locationName, setLocationName] = useState('')
   const [loading, setLoading] = useState(true)
   const [aiTips, setAiTips] = useState([])
-  const [tipLoading, setTipLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const applyBundle = (bundle) => {
+    setCurrent(bundle.current)
+    setForecast(bundle.daily)
+    setLocationName(bundle.locationName)
+    setAiTips(bundle.tips)
+  }
 
   const fetchWeather = async (lat, lon, displayName) => {
     setLoading(true)
     setError('')
-    setAiTips([])
     try {
-      const weatherRes = await axios.get(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,pressure_msl&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6`
-      )
-
-      const data = weatherRes.data
-      setCurrent(data.current)
-      setForecast(data.daily)
-      setLocationName(displayName)
-
-      // Get AI tips (array format)
-      setTipLoading(true)
-      try {
-        const tipRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/farming-tip`, {
-          description: friendlyDescription(data.current.weather_code, data.current.is_day),
-          temp: Math.round(data.current.temperature_2m),
-          feelsLike: Math.round(data.current.apparent_temperature),
-          humidity: data.current.relative_humidity_2m,
-          wind: Math.round(data.current.wind_speed_10m),
-          city: displayName,
-        })
-        if (tipRes.data.tips && Array.isArray(tipRes.data.tips)) {
-          setAiTips(tipRes.data.tips)
-        }
-      } catch {
-        setAiTips([
-          'Check your soil moisture before watering today.',
-          'Avoid spraying pesticides if rain is coming.',
-          'Make sure your drainage channels are clear.',
-        ])
-      } finally {
-        setTipLoading(false)
-      }
-
+      applyBundle(await fetchWeatherBundle(lat, lon, displayName))
     } catch {
       setError('Could not fetch weather data. Please try again.')
     } finally {
@@ -148,8 +92,7 @@ function Weather() {
         return
       }
       const { lat, lon, display_name } = geoRes.data[0]
-      const shortName = display_name.split(',').slice(0, 2).join(',')
-      await fetchWeather(parseFloat(lat), parseFloat(lon), shortName)
+      await fetchWeather(parseFloat(lat), parseFloat(lon), display_name.split(',').slice(0, 2).join(','))
     } catch {
       setError('Could not find that location. Please try again.')
       setLoading(false)
@@ -157,6 +100,12 @@ function Weather() {
   }
 
   useEffect(() => {
+    const cached = getCachedWeather()
+    if (cached) {
+      applyBundle(cached)
+      setLoading(false)
+      return
+    }
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords
@@ -286,25 +235,18 @@ function Weather() {
               </div>
               <div className="flex-1">
                 <p className="text-xs font-medium uppercase tracking-widest mb-3 text-[#BA7517]">AI Farming Tips</p>
-                {tipLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-[#FAC775] border-t-[#BA7517] rounded-full animate-spin"/>
-                    <p className="text-sm text-[#854F0B]">Getting personalised tips...</p>
-                  </div>
-                ) : (
-                  <ul className="space-y-2 pl-0 list-none">
-                    {aiTips && Array.isArray(aiTips) && aiTips.length > 0 ? (
-                      aiTips.map((tip, idx) => (
-                        <li key={idx} className="flex gap-2 items-start text-sm text-[#633806] leading-relaxed">
-                          <span className="text-[#BA7517] font-bold text-lg mt-[-6px]">•</span>
-                          <span>{tip}</span>
-                        </li>
-                      ))
-                    ) : (
-                      <li className="text-sm text-[#633806]">Check local conditions before major farming activities.</li>
-                    )}
-                  </ul>
-                )}
+                <ul className="space-y-2 pl-0 list-none">
+                  {aiTips && Array.isArray(aiTips) && aiTips.length > 0 ? (
+                    aiTips.map((tip, idx) => (
+                      <li key={idx} className="flex gap-2 items-start text-sm text-[#633806] leading-relaxed">
+                        <span className="text-[#BA7517] font-bold text-lg mt-[-6px]">•</span>
+                        <span>{tip}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-[#633806]">Check local conditions before major farming activities.</li>
+                  )}
+                </ul>
               </div>
             </div>
 

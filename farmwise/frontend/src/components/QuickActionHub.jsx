@@ -1,36 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
-
-const friendlyDescription = (code, isDay) => {
-  const descriptions = {
-    0: isDay ? 'Clear Sky' : 'Clear Night',
-    1: 'Mostly Clear',
-    2: 'Partly Cloudy',
-    3: 'Overcast',
-    45: 'Foggy',
-    48: 'Freezing Fog',
-    51: 'Light Drizzle',
-    53: 'Drizzle',
-    55: 'Heavy Drizzle',
-    61: 'Light Rain',
-    63: 'Moderate Rain',
-    65: 'Heavy Rain',
-    71: 'Light Snow',
-    73: 'Snowfall',
-    75: 'Heavy Snow',
-    77: 'Snow Grains',
-    80: 'Light Rain Showers',
-    81: 'Rain Showers',
-    82: 'Heavy Rain Showers',
-    85: 'Snow Showers',
-    86: 'Heavy Snow Showers',
-    95: 'Thunderstorm',
-    96: 'Thunderstorm with Hail',
-    99: 'Thunderstorm with Heavy Hail',
-  }
-  return descriptions[code] || 'Unknown'
-}
+import { getCachedWeather, resolveLocationAndFetch, friendlyDescription } from '../utils/weatherApi'
 
 const CROPS = [
   { id: "maize",     label: "Maize",     emoji: "🌽" },
@@ -95,95 +65,39 @@ export default function QuickActionHub() {
 
   // 2. Weather Advisory with Geolocation
   useEffect(() => {
-    if (activeTab === 'weather' && !weatherData) {
-      setLoading(true);
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            try {
-              // Get City Name
-              const geoRes = await axios.get(
-                `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-                { headers: { 'Accept-Language': 'en' } }
-              );
-              const city = geoRes.data.address?.city || geoRes.data.address?.town || geoRes.data.address?.village || 'Your Location';
-              
-              // Get Weather
-              const weatherRes = await axios.get(
-                `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,is_day,relative_humidity_2m,wind_speed_10m&timezone=auto`
-              );
-              
-              const current = weatherRes.data.current;
-              
-              // Get AI tips (array)
-              let tips = [
-                "Check your soil moisture before watering today.",
-                "Avoid spraying pesticides if it looks like rain is coming.",
-                "Make sure your drainage channels are clear."
-              ];
-              try {
-                const tipRes = await axios.post(`${import.meta.env.VITE_API_URL}/api/farming-tip`, {
-                  description: friendlyDescription(current.weather_code, current.is_day),
-                  temp: Math.round(current.temperature_2m),
-                  humidity: current.relative_humidity_2m,
-                  wind: Math.round(current.wind_speed_10m),
-                  city: city,
-                });
-                if (tipRes.data.tips && Array.isArray(tipRes.data.tips)) {
-                  tips = tipRes.data.tips;
-                }
-              } catch (e) { console.error("Tip error", e); }
+    if (activeTab !== 'weather' || weatherData) return
 
-              setWeatherData({
-                city: city,
-                temp: Math.round(current.temperature_2m),
-                condition: friendlyDescription(current.weather_code, current.is_day),
-                humidity: current.relative_humidity_2m,
-                wind: Math.round(current.wind_speed_10m),
-                tips: tips
-              });
-            } catch (err) {
-              console.error(err);
-              // Fallback
-              setWeatherData({ city: "Kano", temp: 32, condition: "Sunny", tip: "Ensure your crops have enough water.", humidity: 40, wind: 10 });
-            } finally {
-              setLoading(false);
-            }
-          },
-          () => {
-            // Fallback to Kano if permission denied
-            setWeatherData({ 
-              city: "Kano", 
-              temp: 32, 
-              condition: "Sunny", 
-              tips: [
-                "Check your soil moisture before watering today.",
-                "Avoid spraying pesticides if it looks like rain is coming.",
-                "Make sure your drainage channels are clear."
-              ], 
-              humidity: 40, 
-              wind: 10 
-            });
-            setLoading(false);
-          }
-        );
-      } else {
-        setWeatherData({ 
-          city: "Kano", 
-          temp: 32, 
-          condition: "Sunny", 
-          tips: [
-            "Check your soil moisture before watering today.",
-            "Avoid spraying pesticides if it looks like rain is coming.",
-            "Make sure your drainage channels are clear."
-          ], 
-          humidity: 40, 
-          wind: 10 
-        });
-        setLoading(false);
-      }
+    const toFlat = (b) => ({
+      city: b.locationName,
+      temp: Math.round(b.current.temperature_2m),
+      condition: friendlyDescription(b.current.weather_code, b.current.is_day),
+      humidity: b.current.relative_humidity_2m,
+      wind: Math.round(b.current.wind_speed_10m),
+      tips: b.tips,
+    })
+
+    const cached = getCachedWeather()
+    if (cached) {
+      setWeatherData(toFlat(cached))
+      return
     }
+
+    setLoading(true)
+    resolveLocationAndFetch(
+      (bundle) => { setWeatherData(toFlat(bundle)); setLoading(false) },
+      () => {
+        setWeatherData({
+          city: 'Kano', temp: 32, condition: 'Sunny',
+          tips: [
+            'Check your soil moisture before watering today.',
+            'Avoid spraying pesticides if it looks like rain is coming.',
+            'Make sure your drainage channels are clear.',
+          ],
+          humidity: 40, wind: 10,
+        })
+        setLoading(false)
+      }
+    )
   }, [activeTab, weatherData]);
 
   const loadingWeather = activeTab === 'weather' && !weatherData && loading;

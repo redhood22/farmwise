@@ -111,18 +111,18 @@ export default function Home() {
         {/* Catchy Headline - RESTORED SIZE */}
         <div className="relative z-10 text-center mb-0">
           <h1 className="text-5xl md:text-7xl font-medium text-[#412402] leading-[1.1] tracking-tight mb-8">
-            Smart farming,<br />
-            <span className="text-[#BA7517] italic">made simple.</span>
+            Spot Crop Disease<br />
+            <span className="text-[#BA7517] italic">Before It Spreads.</span>
           </h1>
           <p className="text-[#854F0B] text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-12 opacity-90 font-medium">
-             Instant help for your crops and weather updates you can actually understand. Just pick a tool below to start.
+            Upload a photo of any leaf and get an instant AI diagnosis, with treatment steps built for Nigerian farms. Plus real-time weather and farming guidance, all in one place.
           </p>
 
           <button 
             onClick={scrollToHub}
             className="group relative z-20 bg-[#412402] text-white font-bold px-12 py-5 rounded-full hover:bg-[#633806] transition-all duration-300 shadow-2xl shadow-[#412402]/20 mb-24"
           >
-            Get Started Now
+            Detect a Disease Now
             <span className="ml-2 inline-block group-hover:translate-y-1 transition-transform">↓</span>
           </button>
         </div>
@@ -144,7 +144,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             
             {/* Visual Side (Mockup) */}
-            <div className="relative flex justify-center">
+            <div className="relative hidden lg:flex justify-center">
               <div className="relative group w-full max-w-[260px]">
                 <div className="absolute inset-0 bg-[#FAC775]/20 rounded-[3.5rem] blur-3xl group-hover:scale-105 transition-transform" />
                 

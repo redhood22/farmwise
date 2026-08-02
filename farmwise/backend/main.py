@@ -3,7 +3,8 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from groq import Groq
-from openai import OpenAI
+from google import genai
+from google.genai import types
 import base64
 import re
 import traceback
@@ -17,10 +18,7 @@ CORS(app, origins=["https://farmwisee.vercel.app"])
 # --- Clients ---
 groq_client = Groq(api_key=os.getenv("GROQ_KEY"))
 
-nvidia_client = OpenAI(
-    api_key=os.getenv("NVIDIA_KEY"),
-    base_url="https://integrate.api.nvidia.com/v1"
-)
+client_gemini = genai.Client(api_key=os.getenv("GEMINI_KEY"))
 
 
 
@@ -34,27 +32,40 @@ def get_farming_tip():
     try:
         data = request.json
 
-        prompt = f"""You are an expert agricultural advisor. Based on the following weather data, give a SHORT practical farming tip (2-3 sentences max) for a small-scale farmer. Be specific, actionable, and friendly. No greetings or sign-offs.
+        prompt = f"""You are an expert agricultural advisor. Based on the following weather data, give exactly 3 short, practical farming tips for a small-scale farmer. Each tip should be one clear, actionable sentence. Be specific and friendly, no greetings or sign-offs.
 
 Weather: {data.get('description')}
 Temperature: {data.get('temp')}°C (feels like {data.get('feelsLike')}°C)
 Humidity: {data.get('humidity')}%
 Wind speed: {data.get('wind')} km/h
-Location: {data.get('city')}"""
+Location: {data.get('city')}
 
-        # --- Using Groq ---
+Return ONLY a JSON array of exactly 3 strings. No markdown, no extra text."""
+
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}]
         )
-        tip = response.choices[0].message.content.strip()
-        print("[farming-tip] Using Groq")
+        raw = response.choices[0].message.content.strip()
+        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
+        tips = json.loads(raw)
+        if not isinstance(tips, list):
+            raise ValueError("Model did not return a list")
 
-        return jsonify({"tip": tip}), 200
+        print("[farming-tip] Using Groq")
+        return jsonify({"tips": tips}), 200
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": str(e), "tip": "Check local conditions before major farming activities today."}), 500
+        return jsonify({
+            "error": str(e),
+            "tips": [
+                "Check your soil moisture before watering today.",
+                "Avoid spraying pesticides if it looks like rain is coming.",
+                "Make sure your drainage channels are clear.",
+            ]
+        }), 500
 
 
 # ─────────────────────────────────────────────
@@ -106,28 +117,15 @@ If the image does not appear to be a plant or crop leaf at all, set status to "u
 
         raw = None
 
-        b64_str = base64.b64encode(image_bytes).decode("utf-8")
-        data_url = f"data:{mime_type};base64,{b64_str}"
-
-        response = nvidia_client.chat.completions.create(
-            model="nvidia/nemotron-nano-12b-v2-vl",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "/think"
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": data_url}}
-                    ]
-                }
-            ],
-            max_tokens=1000
+        response = client_gemini.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                prompt
+            ]
         )
-        raw = response.choices[0].message.content.strip()
-        print("[detect-disease] Using NVIDIA NIM Nemotron Nano 12B VL")
+        raw = response.text.strip()
+        print("[detect-disease] Using Gemini 2.5 Flash")
 
         # Strip markdown fences if model wraps in ```json ... ```
         raw = re.sub(r"^```(?:json)?\s*", "", raw)
