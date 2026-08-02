@@ -89,7 +89,8 @@ def detect_disease():
 
         image_bytes = base64.b64decode(image_data)
 
-        prompt = f"""You are an expert agricultural plant pathologist AI assistant.
+        prompt = f"""You are an expert agricultural plant pathologist AI assistant, but you explain things the way you'd talk to a farmer, not a scientist. Avoid technical jargon, chemical names, and scientific terms. Use everyday words a farmer would understand.
+
 The farmer has submitted a photo of their crop for diagnosis. They have selected this as a {crop_type} plant.
 
 Analyze the image carefully. Your first task is to verify if the image actually shows a {crop_type} plant.
@@ -103,13 +104,13 @@ Respond ONLY with a JSON object in this exact format (no markdown, no extra text
   "status": "healthy" or "diseased" or "unclear",
   "disease_name": "Name of the disease, or 'None' if healthy, or 'Unable to determine' if unclear",
   "confidence": "A realistic assessment: High (clear symptoms) / Medium / Low (blurry or ambiguous)",
-  "description": "2-3 sentence plain-language description of what you see and why you made this diagnosis. Mention the crop type you identified.",
+  "description": "1-2 short, plain-language sentences describing what you see on the leaf and what it means, using simple words a farmer would use (e.g. 'brown patches' not 'necrotic lesions'). Mention the crop type you identified.",
   "treatment": [
-    "Step 1: specific actionable treatment step for the DETECTED crop",
-    "Step 2: specific actionable treatment step",
-    "Step 3: specific actionable treatment step"
+    "Step 1: a simple, practical action the farmer can take, described in everyday terms rather than chemical names where possible",
+    "Step 2: a simple, practical action",
+    "Step 3: a simple, practical action"
   ],
-  "prevention": "One concise prevention tip for the future of the DETECTED crop",
+  "prevention": "One short, plain-language prevention tip for next time",
   "urgency": "Immediate action needed / Monitor closely / No action needed"
 }}
 
